@@ -1,0 +1,26 @@
+I set up a server socket to non-blocking mode using the address and port parsed
+from the config file. Then I set up a pollfd structure and use the poll method
+to detect when there are incoming connections and when an existing connection
+has incoming data. I accept all incoming connections which are then added to
+the fds that poll monitors. Connections with incoming data get passed off to a
+handler method. The handler method parses the header to determine which method
+should handle the request. Multiple incoming requests are handled sequentially
+at the moment but if performance suffers, I plan on multi-threading the
+handling. A closed connection is removed from the list of fds that poll
+monitors.
+
+To handle multiplexing across multiple connections, I believe this will require
+parallel processing. I have not reached this point yet but I plan on dividing
+files up into certain sizes and then sending the file portion by portion over
+all current connections for that session id until it has completely been sent.
+If a new connection has the same session id, then it simply gets added to the
+queue of connections that will get sent a portion.
+
+To handle compression, I created an array with 256 elements. Each element has a
+struct containing the length of the bit code, and the bitcode itself. The index
+of the array corresponds to the byte the bitcode represents. This gives O(1)
+lookup time for the bitcode. To handle decompression, I created a binary tree 
+out of the bitcodes. Since the codes are uniquely decodable that means there
+exists a binary tree where branch left = 1 and branch right = 0 leads to every
+byte from 0x00 to 0xff (inspired by huffman tree). This gives faster lookup
+time for decompression.
